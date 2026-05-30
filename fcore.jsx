@@ -86,20 +86,6 @@ const ROLE_SCOPE = {
   reputation: "Reviews · GBP · response",
 };
 
-/* ---------------- shared chrome ---------------- */
-function StatusBar() {
-  return (
-    <div className="statusbar">
-      <span>9:41</span>
-      <span className="sb">
-        <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor"><rect x="0" y="7.5" width="3" height="4.5" rx="1"/><rect x="5" y="5" width="3" height="7" rx="1"/><rect x="10" y="2.5" width="3" height="9.5" rx="1"/><rect x="15" y="0" width="3" height="12" rx="1"/></svg>
-        <svg width="16" height="12" viewBox="0 0 16 12" fill="none" stroke="currentColor" strokeWidth="1.4"><path d="M1 4.4C3.1 2.1 5.4 1 8 1s4.9 1.1 7 3.4M3.4 6.8C4.7 5.4 6.3 4.7 8 4.7s3.3.7 4.6 2.1M5.8 9.2c.6-.6 1.4-1 2.2-1s1.6.4 2.2 1"/></svg>
-        <svg width="26" height="13" viewBox="0 0 26 13" fill="none"><rect x="0.5" y="0.5" width="22" height="12" rx="3.2" stroke="currentColor" opacity="0.45"/><rect x="2" y="2" width="17" height="9" rx="1.8" fill="currentColor"/><rect x="23.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor" opacity="0.45"/></svg>
-      </span>
-    </div>
-  );
-}
-
 function Seg({ side, onLeft, onRight }) {
   return (
     <div className={`seg ${side === "right" ? "right" : ""}`}>
@@ -129,5 +115,5 @@ function useRevealSequence(deps) {
 
 Object.assign(window, {
   Icon, LogoMark, ICON_PATHS, SYMPTOMS, SYM, REVEALS, TEAM, ROLE_SCOPE,
-  StatusBar, Seg, useRevealSequence,
+  Seg, useRevealSequence,
 });

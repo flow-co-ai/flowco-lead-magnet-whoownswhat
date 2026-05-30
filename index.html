@@ -21,8 +21,10 @@
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
+// Fallback seed for roles with no seam in REVEALS (seo, reputation)
 const ROLE_SEED = { paid: "book", tracking: "book", web: "site", crm: "prove", seo: "prove", content: "site", reputation: "ring" };
 
+// Ordered list of (symptom, causeIdx) seams that involve a given role.
 function getSteamsForRole(role) {
   const seams = [];
   for (const [sym, data] of Object.entries(REVEALS)) {
@@ -39,59 +41,85 @@ function App() {
   const [screen, setScreen] = useState("landing");
   const [symptom, setSymptom] = useState("book");
   const [cause, setCause] = useState(0);
-  const [from, setFrom] = useState("symptom");
+  // Where reveal's back button navigates: "symptom" | "team" | "team-result"
+  const [revealBack, setRevealBack] = useState("symptom");
+  // Where closing's back button navigates: "crosslink" | "team-result"
+  const [closingBack, setClosingBack] = useState("crosslink");
+  // Selected roles from TeamScreen, carried into TeamResultScreen
+  const [selectedRoles, setSelectedRoles] = useState(new Set());
 
   const go = (s) => setScreen(s);
 
+  // Cycles to the next seam for a role (used from CrossLink).
+  // Does not change revealBack — preserves original entry point.
   const cycleRoleSeam = (role) => {
     const seams = getSteamsForRole(role);
-    if (!seams.length) {
-      setSymptom(ROLE_SEED[role]);
-      setCause(0);
-      go("reveal");
-      return;
-    }
+    if (!seams.length) { setSymptom(ROLE_SEED[role]); setCause(0); go("reveal"); return; }
     const cur = seams.findIndex(s => s.symptom === symptom && s.causeIdx === cause);
     const next = seams[(cur + 1) % seams.length];
-    setSymptom(next.symptom);
-    setCause(next.causeIdx);
-    go("reveal");
+    setSymptom(next.symptom); setCause(next.causeIdx); go("reveal");
   };
 
+  // Enters reveal from the team grid (first seam for the role).
   const enterRoleFromTeam = (role) => {
     const seams = getSteamsForRole(role);
     const first = seams[0] || { symptom: ROLE_SEED[role], causeIdx: 0 };
-    setSymptom(first.symptom);
-    setCause(first.causeIdx);
-    setFrom("team");
-    go("reveal");
+    setSymptom(first.symptom); setCause(first.causeIdx);
+    setRevealBack("team"); go("reveal");
+  };
+
+  // Enters reveal from a team-result connection gap.
+  const enterSeamFromResult = (sym, causeIdx) => {
+    setSymptom(sym); setCause(causeIdx);
+    setRevealBack("team-result"); go("reveal");
+  };
+
+  // Enters reveal from a team-result absence role (first seam, or fallback).
+  const enterAbsenceRole = (role) => {
+    const seams = getSteamsForRole(role);
+    const first = seams[0] || { symptom: ROLE_SEED[role], causeIdx: 0 };
+    setSymptom(first.symptom); setCause(first.causeIdx);
+    setRevealBack("team-result"); go("reveal");
   };
 
   const render = () => {
     switch (screen) {
       case "landing":
         return <Landing key="landing" onContinue={() => go("symptom")} />;
+
       case "symptom":
         return <SymptomScreen key="symptom"
-          onReveal={(s) => { setSymptom(s); setCause(0); setFrom("symptom"); go("reveal"); }}
+          onReveal={(s) => { setSymptom(s); setCause(0); setRevealBack("symptom"); go("reveal"); }}
           onTeam={() => go("team")} />;
+
       case "reveal":
         return <RevealScreen key={`reveal-${symptom}-${cause}`} symptom={symptom} causeIdx={cause}
           onCause={setCause}
-          onBack={() => go(from)}
+          onBack={() => go(revealBack)}
           onExplore={() => go("crosslink")} />;
+
       case "crosslink":
         return <CrossLink key={`crosslink-${symptom}-${cause}`} symptom={symptom} causeIdx={cause}
           onRole={cycleRoleSeam}
           onSymptom={(s) => { setSymptom(s); setCause(0); go("reveal"); }}
           onBack={() => go("reveal")}
-          onClose={() => go("closing")} />;
+          onClose={() => { setClosingBack("crosslink"); go("closing"); }} />;
+
       case "team":
         return <TeamScreen key="team"
           onSymptomDoor={() => go("symptom")}
-          onRole={enterRoleFromTeam} />;
+          onProceed={(sel) => { setSelectedRoles(sel); go("team-result"); }} />;
+
+      case "team-result":
+        return <TeamResultScreen key="team-result" selected={selectedRoles}
+          onSeam={enterSeamFromResult}
+          onAbsenceRole={enterAbsenceRole}
+          onBack={() => go("team")}
+          onClose={() => { setClosingBack("team-result"); go("closing"); }} />;
+
       case "closing":
-        return <ClosingScreen key="closing" onBack={() => go("crosslink")} />;
+        return <ClosingScreen key="closing" onBack={() => go(closingBack)} />;
+
       default: return null;
     }
   };

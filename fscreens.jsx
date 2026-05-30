@@ -54,12 +54,20 @@ function BreakDiagram({ cause }) {
    SCREEN 1 — Landing / gate
    ============================================================ */
 function Landing({ onContinue }) {
+  const [logoErr, setLogoErr] = uS(false);
   return (
     <div className="screen s-land">
-      <StatusBar />
       <div className="body" style={{ justifyContent: "center" }}>
         <div className="inner">
-          <LogoMark />
+          {logoErr
+            ? <span className="logo-fallback">Flow Co.</span>
+            : <img
+                className="logo-img"
+                src="https://flowco.ai/wp-content/uploads/2025/05/Flow-Co.-Logo-2.png"
+                alt="Flow Co."
+                onError={() => setLogoErr(true)}
+              />
+          }
           <h1>Who owns what.<br /><em>Where it breaks.</em></h1>
           <p className="sub">A marketing diagnostic for local service business owners.</p>
           <div className="fields">
@@ -83,7 +91,6 @@ function SymptomScreen({ onReveal, onTeam }) {
   uE(() => { const t = setTimeout(() => setMounted(true), 30); return () => clearTimeout(t); }, []);
   return (
     <div className="screen s-symptom">
-      <StatusBar />
       <div className="topbar" style={{ paddingBottom: 4 }}>
         <Seg side="left" onLeft={() => {}} onRight={onTeam} />
       </div>
@@ -132,7 +139,6 @@ function RevealScreen({ symptom, causeIdx, onCause, onBack, onExplore }) {
 
   return (
     <div className={`screen s-reveal ${cls}`}>
-      <StatusBar />
       <div className="topbar">
         <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
         <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
@@ -170,7 +176,6 @@ function CrossLink({ symptom, causeIdx, onRole, onSymptom, onBack, onClose }) {
   const cause = REVEALS[symptom].causes[causeIdx];
   return (
     <div className="screen s-cross r-named">
-      <StatusBar />
       <div className="topbar">
         <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
         <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
@@ -220,27 +225,158 @@ function CrossLink({ symptom, causeIdx, onRole, onSymptom, onBack, onClose }) {
 }
 
 /* ============================================================
-   SCREEN 6 — I have a team
+   SCREEN 6 — I have a team (multi-select)
    ============================================================ */
-function TeamScreen({ onSymptomDoor, onRole }) {
+function TeamScreen({ onSymptomDoor, onProceed }) {
+  const [sel, setSel] = uS(() => new Set());
+  const toggle = (role) => setSel(prev => {
+    const next = new Set(prev);
+    if (next.has(role)) next.delete(role); else next.add(role);
+    return next;
+  });
   return (
     <div className="screen s-team">
-      <StatusBar />
       <div className="topbar" style={{ paddingBottom: 4 }}>
         <Seg side="right" onLeft={onSymptomDoor} onRight={() => {}} />
       </div>
       <div className="body scroll" style={{ paddingTop: 4 }}>
         <div className="head">
           <span className="eyebrow">Seven roles, one funnel</span>
-          <h2>Your team has the roles. Pick one to see its seams.</h2>
+          <h2>Which of these roles does your team own?</h2>
         </div>
         <div className="teamgrid">
           {TEAM.map((r, i) => (
-            <div key={r.role} className={`rolecard ${i === 6 ? "full" : ""}`} onClick={() => onRole(r.role)}>
+            <div key={r.role}
+              className={`rolecard ${i === 6 ? "full" : ""} ${sel.has(r.role) ? "sel" : ""}`}
+              onClick={() => toggle(r.role)}>
               <span className="ic"><Icon name={r.role} size={32} sw={1.5} /></span>
               <span className="nm">{r.name}</span>
+              {sel.has(r.role) && <span className="rc-check"><Icon name="check" size={13} sw={2.4} /></span>}
             </div>
           ))}
+        </div>
+        {sel.size > 0 && (
+          <div className="sel-cta">
+            <button className="btn btn--sage" onClick={() => onProceed(sel)}>
+              See where it breaks <span className="arrow"><Icon name="arrow" size={18} sw={1.8} /></span>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+   SCREEN 6b — Team result (connection + absence gaps)
+   ============================================================ */
+const ABSENCE_COPY = {
+  tracking: {
+    headline: "Missing Tracking",
+    lead: "You’re spending without a scoreboard.",
+    body: "The phone rings. A form comes in. A booking lands. But nothing ties any of it back to what caused it. So every budget decision is a guess — you keep paying for the channel that feels busy, not the one that’s working. The waste doesn’t show up on a report. It hides in the channels you can’t see.",
+  },
+  web: {
+    headline: "Missing Web / dev",
+    lead: "Your traffic lands somewhere nobody owns.",
+    body: "The ads work. The clicks come. Then they hit a page that loads slow on mobile, buries the phone number, or routes a form into a void. You’re paying to send people to a door that sticks. Nobody owns the thing the whole funnel depends on — so the leak stays invisible while the spend keeps climbing.",
+  },
+  crm: {
+    headline: "Missing CRM / follow-up",
+    lead: "Leads come in and quietly leak out.",
+    body: "Someone reaches out. They get a generic auto-reply, or nothing. No record gets created. No follow-up cadence fires. By the time anyone circles back — if anyone does — they’ve already booked the competitor who answered first. It looks like a lead-quality problem. It’s a follow-up problem.",
+  },
+  content: {
+    headline: "Missing Content",
+    lead: "Paid has nothing to stand on, and organic goes dark.",
+    body: "Without someone making things, your ads run on stock photos and your feed goes quiet. There’s no proof, no story, nothing that makes a stranger trust you before the call. So paid works harder than it should to convert, and the free channel that compounds over time never gets built.",
+  },
+  seo: {
+    headline: "Missing SEO / local",
+    lead: "You’re invisible the moment someone searches.",
+    body: "When a person types “near me” with their card already out, the businesses with a maintained Google Business Profile and a steady stream of fresh reviews win the map. Without someone owning local rank, your profile sits stale and your reviews trickle in too slow to matter. You’re not losing to better marketing — you’re losing to a competitor who shows up where you don’t.",
+  },
+};
+const ABSENCE_PRIORITY = ["tracking", "web", "crm", "seo", "content"];
+
+function TeamResultScreen({ selected, onSeam, onAbsenceRole, onBack, onClose }) {
+  // Connection gaps: unique role-pair seams where both roles are selected, capped at 3
+  const seenPairs = new Set();
+  const connectionGaps = [];
+  for (const sym of Object.keys(REVEALS)) {
+    const data = REVEALS[sym];
+    for (let i = 0; i < data.causes.length; i++) {
+      const c = data.causes[i];
+      const pairKey = [c.a.role, c.b.role].sort().join("|");
+      if (selected.has(c.a.role) && selected.has(c.b.role) && !seenPairs.has(pairKey)) {
+        seenPairs.add(pairKey);
+        connectionGaps.push({ symptom: sym, causeIdx: i, cause: c });
+        if (connectionGaps.length === 3) break;
+      }
+    }
+    if (connectionGaps.length === 3) break;
+  }
+
+  // Absence gaps: headline roles NOT in selected, priority order, capped at 3
+  const absenceGaps = ABSENCE_PRIORITY.filter(r => !selected.has(r)).slice(0, 3);
+
+  return (
+    <div className="screen s-team-result">
+      <div className="topbar">
+        <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
+        <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
+      </div>
+      <div className="body scroll">
+
+        {connectionGaps.length > 0 && (
+          <div className="tr-section">
+            <span className="eyebrow">Connection gaps</span>
+            <p className="tr-section-sub">Seams between the roles you have</p>
+            <div className="xrows" style={{ marginTop: 14 }}>
+              {connectionGaps.map((g) => (
+                <div key={`${g.symptom}-${g.causeIdx}`} className="xrow-item"
+                  onClick={() => onSeam(g.symptom, g.causeIdx)}>
+                  <span className="xrow-ic"><Icon name={g.cause.a.role} size={20} /></span>
+                  <span className="xrow-main">
+                    <span className="xr-name">{g.cause.kick}</span>
+                    <span className="xr-sub">{g.cause.a.name} &amp; {g.cause.b.name}</span>
+                  </span>
+                  <span className="chev"><Icon name="chev" size={17} /></span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {absenceGaps.length > 0 && (
+          <div className={`tr-section${connectionGaps.length > 0 ? " tr-section--gap" : ""}`}>
+            <span className="eyebrow">Absence gaps</span>
+            <p className="tr-section-sub">What breaks when these roles aren&rsquo;t in the room</p>
+            <div className="absence-list">
+              {absenceGaps.map((role) => {
+                const cp = ABSENCE_COPY[role];
+                return (
+                  <div key={role} className="absence-card" onClick={() => onAbsenceRole(role)}>
+                    <div className="absence-head">
+                      <span className="xrow-ic warn"><Icon name={role} size={20} /></span>
+                      <div className="absence-head-txt">
+                        <span className="ab-headline">{cp.headline}</span>
+                        <span className="ab-lead">{cp.lead}</span>
+                      </div>
+                      <span className="chev" style={{ color: "var(--ink-35)", flexShrink: 0 }}><Icon name="chev" size={17} /></span>
+                    </div>
+                    <p className="ab-body">{cp.body}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        <div style={{ marginTop: "auto", padding: "22px 0 26px", flexShrink: 0 }}>
+          <button className="btn btn--sage" onClick={onClose}>
+            This seam is one of many <span className="arrow"><Icon name="arrow" size={18} sw={1.8} /></span>
+          </button>
         </div>
       </div>
     </div>
@@ -263,7 +399,6 @@ function ClosingScreen({ onBack }) {
   for (let d = 1; d <= dim; d++) cells.push(d);
   return (
     <div className="screen s-close">
-      <StatusBar />
       <div className="topbar">
         <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
       </div>
@@ -305,4 +440,4 @@ function ClosingScreen({ onBack }) {
   );
 }
 
-Object.assign(window, { Landing, SymptomScreen, RevealScreen, CrossLink, TeamScreen, ClosingScreen });
+Object.assign(window, { Landing, SymptomScreen, RevealScreen, CrossLink, TeamScreen, TeamResultScreen, ClosingScreen });

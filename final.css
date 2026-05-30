@@ -50,16 +50,6 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
   overflow: hidden;
 }
 
-/* status bar */
-.statusbar {
-  position: relative; z-index: 50;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 16px 28px 0;
-  font-size: 14px; font-weight: 600; color: var(--black); flex: none;
-  letter-spacing: 0.01em;
-}
-.statusbar .sb { display: flex; align-items: center; gap: 6px; }
-
 /* ---------------- screen router ---------------- */
 .viewport { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .screen {
@@ -72,7 +62,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .body.scroll { overflow-y: auto; }
 
 /* topbar (back / dots) */
-.topbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 30px 0; flex: none; color: var(--black); }
+.topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 30px 0; padding-top: max(14px, env(safe-area-inset-top)); flex: none; color: var(--black); }
 .iconbtn { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%; color: var(--black); transition: background .2s; }
 .iconbtn:active { background: rgba(26,26,23,.06); }
 
@@ -85,6 +75,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .s-land .inner { display: flex; flex-direction: column; align-items: center; text-align: center; width: 100%; }
 .s-land h1, .s-land .sub { width: 100%; }
 .logo-mark { width: 74px; height: 74px; margin-bottom: 30px; }
+.logo-img { width: 110px; height: auto; margin-bottom: 30px; }
+.logo-fallback { font-family: var(--serif); font-weight: 700; font-size: 24px; color: var(--black); margin-bottom: 30px; display: block; }
 .s-land h1 {
   font-family: var(--serif); font-weight: 700; font-size: 36px; line-height: 1.08;
   letter-spacing: -0.015em;
@@ -298,9 +290,17 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .rolecard {
   background: var(--paper); border: 1px solid var(--line); border-radius: 16px;
   padding: 22px 18px; display: flex; flex-direction: column; align-items: center; gap: 12px;
-  text-align: center; cursor: pointer;
-  transition: border-color .2s, transform .2s, box-shadow .2s;
+  text-align: center; cursor: pointer; position: relative;
+  transition: border-color .2s, transform .2s, box-shadow .2s, background .2s;
   opacity: 0; transform: translateY(14px); animation: fadeUp .5s var(--ease) both;
+}
+.rolecard.sel { background: var(--sage-tint); border-color: var(--sage); }
+.rolecard.sel .ic, .rolecard.sel .nm { color: var(--sage-dk); }
+.rc-check {
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px; border-radius: 50%; background: var(--sage);
+  display: grid; place-items: center; color: #fff;
+  animation: pop .35s var(--ease-settle) both;
 }
 .rolecard:active { transform: scale(.98); border-color: var(--sage); box-shadow: 0 14px 30px -18px rgba(26,26,23,.3); }
 .rolecard:nth-child(1){animation-delay:.04s}.rolecard:nth-child(2){animation-delay:.09s}
@@ -348,3 +348,26 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .timechip { border: 1px solid var(--line-2); border-radius: 9px; padding: 9px 16px; font-size: 13px; font-weight: 500; color: var(--ink-70); transition: all .2s; }
 .timechip.on { background: var(--sage); color: #fff; border-color: var(--sage); }
 .tz { font-size: 11px; color: var(--ink-35); text-align: right; margin-top: 14px; flex: none; }
+
+/* ============================================================
+   SCREEN 6b — Team result
+   ============================================================ */
+.tr-section { padding-top: 20px; }
+.tr-section--gap { margin-top: 28px; }
+.tr-section-sub { font-size: 13px; color: var(--ink-50); margin-top: 5px; line-height: 1.5; }
+.absence-list { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; padding-bottom: 4px; }
+.absence-card {
+  background: var(--paper); border: 1px solid var(--line); border-left: 3px solid var(--sage-dk);
+  border-radius: 14px; padding: 16px 18px; cursor: pointer;
+  transition: border-color .2s, transform .2s;
+  animation: fadeUp .55s var(--ease) both;
+}
+.absence-card:nth-child(1) { animation-delay: .05s; }
+.absence-card:nth-child(2) { animation-delay: .13s; }
+.absence-card:nth-child(3) { animation-delay: .21s; }
+.absence-card:active { transform: scale(.99); border-color: var(--sage); }
+.absence-head { display: flex; align-items: flex-start; gap: 14px; }
+.absence-head-txt { flex: 1; min-width: 0; }
+.ab-headline { display: block; font-size: 14px; font-weight: 600; letter-spacing: -0.01em; color: var(--black); }
+.ab-lead { display: block; margin-top: 3px; font-family: var(--serif); font-style: italic; font-size: 14px; color: var(--ink-70); line-height: 1.3; }
+.ab-body { margin-top: 12px; font-size: 13px; color: var(--ink-50); line-height: 1.65; }
