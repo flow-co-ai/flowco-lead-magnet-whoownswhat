@@ -16,69 +16,95 @@
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
 
+<style>
+/* inline explore panel */
+.explore-panel { width: 100%; margin-top: 24px; text-align: left; }
+.ep-row {
+  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+  margin-bottom: 10px; overflow: hidden; transition: border-color .2s;
+}
+.ep-row--open { border-color: var(--sage); }
+.ep-row-head { display: flex; align-items: center; gap: 14px; padding: 16px 18px; cursor: pointer; }
+.ep-row-main { flex: 1; display: flex; flex-direction: column; gap: 3px; }
+.ep-row-name { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: var(--black); }
+.ep-row-name.serif { font-family: var(--serif); font-style: italic; font-size: 15.5px; }
+.ep-row-scope { font-size: 11.5px; color: var(--ink-35); }
+.ep-row-body { padding: 0 18px 18px; }
+.ep-quote {
+  font-size: 13.5px; color: var(--ink-50); line-height: 1.6;
+  border-left: 2px solid var(--sage); padding-left: 14px; margin-bottom: 12px;
+}
+.ep-rabbit {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12.5px; font-weight: 500; color: var(--sage-dk);
+}
+.ep-related {
+  display: flex; align-items: flex-start; gap: 14px;
+  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
+  padding: 16px 18px; cursor: pointer; margin-bottom: 10px;
+  transition: border-color .2s, transform .2s;
+}
+.ep-related:active { transform: scale(.99); border-color: var(--sage); }
+.ep-cta { padding: 14px 0 26px; }
+</style>
 <script type="text/babel" src="fcore.jsx"></script>
 <script type="text/babel" src="fscreens.jsx"></script>
 <script type="text/babel">
 const { useState, useEffect, useRef } = React;
 
 // Fallback seed for roles with no seam in REVEALS (seo, reputation)
-const ROLE_SEED = { paid: "book", tracking: "book", web: "site", crm: "prove", seo: "prove", content: "site", reputation: "ring" };
+const ROLE_SEED = { paid: "ring", tracking: "ring", crm: "book", content: "book", web: "site", seo: "prove", reputation: "ring" };
 
-// Ordered list of (symptom, causeIdx) seams that involve a given role.
+// Returns symptom keys for every seam that involves a given role.
 function getSteamsForRole(role) {
-  const seams = [];
-  for (const [sym, data] of Object.entries(REVEALS)) {
-    data.causes.forEach((c, i) => {
-      if (c.a.role === role || c.b.role === role) {
-        seams.push({ symptom: sym, causeIdx: i });
-      }
-    });
-  }
-  return seams;
+  return Object.keys(REVEALS).filter(sym => {
+    const s = REVEALS[sym];
+    return s.a.role === role || s.b.role === role;
+  });
 }
+window.getSteamsForRole = getSteamsForRole;
 
 function App() {
   const [screen, setScreen] = useState("landing");
   const [symptom, setSymptom] = useState("book");
-  const [cause, setCause] = useState(0);
   // Where reveal's back button navigates: "symptom" | "team" | "team-result"
   const [revealBack, setRevealBack] = useState("symptom");
-  // Where closing's back button navigates: "crosslink" | "team-result"
-  const [closingBack, setClosingBack] = useState("crosslink");
+  // Where closing's back button navigates: "reveal" | "team-result"
+  const [closingBack, setClosingBack] = useState("reveal");
   // Selected roles from TeamScreen, carried into TeamResultScreen
   const [selectedRoles, setSelectedRoles] = useState(new Set());
 
   const go = (s) => setScreen(s);
 
-  // Cycles to the next seam for a role (used from CrossLink).
+  // Cycles to the next seam for a role (called from inline panel).
   // Does not change revealBack — preserves original entry point.
-  const cycleRoleSeam = (role) => {
+  const handleRoleFromReveal = (role) => {
     const seams = getSteamsForRole(role);
-    if (!seams.length) { setSymptom(ROLE_SEED[role]); setCause(0); go("reveal"); return; }
-    const cur = seams.findIndex(s => s.symptom === symptom && s.causeIdx === cause);
+    if (!seams.length) { setSymptom(ROLE_SEED[role]); go("reveal"); return; }
+    const cur = seams.indexOf(symptom);
     const next = seams[(cur + 1) % seams.length];
-    setSymptom(next.symptom); setCause(next.causeIdx); go("reveal");
+    setSymptom(next); go("reveal");
   };
 
   // Enters reveal from the team grid (first seam for the role).
   const enterRoleFromTeam = (role) => {
     const seams = getSteamsForRole(role);
-    const first = seams[0] || { symptom: ROLE_SEED[role], causeIdx: 0 };
-    setSymptom(first.symptom); setCause(first.causeIdx);
+    const first = seams[0] || ROLE_SEED[role];
+    setSymptom(first);
     setRevealBack("team"); go("reveal");
   };
 
   // Enters reveal from a team-result connection gap.
-  const enterSeamFromResult = (sym, causeIdx) => {
-    setSymptom(sym); setCause(causeIdx);
+  const enterSeamFromResult = (sym) => {
+    setSymptom(sym);
     setRevealBack("team-result"); go("reveal");
   };
 
   // Enters reveal from a team-result absence role (first seam, or fallback).
   const enterAbsenceRole = (role) => {
     const seams = getSteamsForRole(role);
-    const first = seams[0] || { symptom: ROLE_SEED[role], causeIdx: 0 };
-    setSymptom(first.symptom); setCause(first.causeIdx);
+    const first = seams[0] || ROLE_SEED[role];
+    setSymptom(first);
     setRevealBack("team-result"); go("reveal");
   };
 
@@ -89,21 +115,15 @@ function App() {
 
       case "symptom":
         return <SymptomScreen key="symptom"
-          onReveal={(s) => { setSymptom(s); setCause(0); setRevealBack("symptom"); go("reveal"); }}
+          onReveal={(s) => { setSymptom(s); setRevealBack("symptom"); go("reveal"); }}
           onTeam={() => go("team")} />;
 
       case "reveal":
-        return <RevealScreen key={`reveal-${symptom}-${cause}`} symptom={symptom} causeIdx={cause}
-          onCause={setCause}
+        return <RevealScreen key={`reveal-${symptom}`} symptom={symptom}
           onBack={() => go(revealBack)}
-          onExplore={() => go("crosslink")} />;
-
-      case "crosslink":
-        return <CrossLink key={`crosslink-${symptom}-${cause}`} symptom={symptom} causeIdx={cause}
-          onRole={cycleRoleSeam}
-          onSymptom={(s) => { setSymptom(s); setCause(0); go("reveal"); }}
-          onBack={() => go("reveal")}
-          onClose={() => { setClosingBack("crosslink"); go("closing"); }} />;
+          onRole={handleRoleFromReveal}
+          onSymptom={(s) => { setSymptom(s); go("reveal"); }}
+          onClose={() => { setClosingBack("reveal"); go("closing"); }} />;
 
       case "team":
         return <TeamScreen key="team"

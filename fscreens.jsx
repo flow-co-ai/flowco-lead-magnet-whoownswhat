@@ -124,18 +124,14 @@ function SymptomScreen({ onReveal, onTeam }) {
 /* ============================================================
    SCREEN 4 — The reveal
    ============================================================ */
-function RevealScreen({ symptom, causeIdx, onCause, onBack, onExplore }) {
-  const causes = REVEALS[symptom].causes;
-  const cause = causes[causeIdx];
-  const cls = useRevealSequence([symptom, causeIdx]);
-  const down = uR(null);
+function RevealScreen({ symptom, onBack, onRole, onSymptom, onClose }) {
+  const cause = REVEALS[symptom];
+  const cls = useRevealSequence([symptom]);
+  const [panelOpen, setPanelOpen] = uS(false);
+  const [expandedRole, setExpandedRole] = uS(null);
 
-  const onUp = (e) => {
-    if (down.current == null || causes.length < 2) return;
-    const dx = e.clientX - down.current; down.current = null;
-    if (dx < -45 && causeIdx < causes.length - 1) onCause(causeIdx + 1);
-    else if (dx > 45 && causeIdx > 0) onCause(causeIdx - 1);
-  };
+  const toggleRow = (key) => setExpandedRole(prev => prev === key ? null : key);
+  const roleNodes = [{ key: "a", node: cause.a }, { key: "b", node: cause.b }];
 
   return (
     <div className={`screen s-reveal ${cls}`}>
@@ -143,82 +139,65 @@ function RevealScreen({ symptom, causeIdx, onCause, onBack, onExplore }) {
         <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
         <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
       </div>
-      <div className="body">
+      <div className={`body${panelOpen ? " scroll" : ""}`}
+        style={{ justifyContent: panelOpen ? "flex-start" : "center" }}>
         <div className="reveal-kick"><span>{cause.kick}</span></div>
-        <div className="diagram"
-          onPointerDown={(e) => { down.current = e.clientX; }}
-          onPointerUp={onUp}>
-          <BreakDiagram cause={cause} />
-        </div>
+        <div className="diagram"><BreakDiagram cause={cause} /></div>
         <p className="reveal-sentence">{cause.sentence}</p>
 
-        {causes.length > 1 && (
-          <div className="causedots">
-            {causes.map((_, i) => <span key={i} className={`cd ${i === causeIdx ? "on" : ""}`} onClick={() => onCause(i)}></span>)}
-            <span className="cd-txt">Two ways this breaks &mdash; swipe</span>
-          </div>
-        )}
-
         <div className="reveal-explore">
-          <button className="explore-link" onClick={() => onExplore(symptom, causeIdx)}>
-            Explore the connection <Icon name="chevsm" size={15} sw={2} />
+          <button className="explore-link" onClick={() => { setPanelOpen(p => !p); setExpandedRole(null); }}>
+            {panelOpen ? "Close" : "Explore the connection"} <Icon name={panelOpen ? "x" : "chevsm"} size={15} sw={2} />
           </button>
         </div>
-      </div>
-    </div>
-  );
-}
 
-/* ============================================================
-   SCREEN 5 — Cross-link
-   ============================================================ */
-function CrossLink({ symptom, causeIdx, onRole, onSymptom, onBack, onClose }) {
-  const cause = REVEALS[symptom].causes[causeIdx];
-  return (
-    <div className="screen s-cross r-named">
-      <div className="topbar">
-        <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
-        <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
-      </div>
-      <div className="body scroll">
-        <div className="mini-diagram">
-          <svg width="260" height="110" viewBox="0 0 260 110">
-            <rect x="74" y="44.4" width="44" height="2.4" rx="1.2" fill="var(--sage)" transform="translate(-6 0)" />
-            <rect x="142" y="44.4" width="44" height="2.4" rx="1.2" fill="var(--sage)" transform="translate(6 0)" />
-            <g transform="translate(0 0)">
-              <path d="M127 39.7 L122 45.7 L127 51.7 M133 39.7 L138 45.7 L133 51.7" stroke="var(--sage-dk)" strokeWidth="1.8" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-              <line x1="130" y1="34" x2="130" y2="38" stroke="var(--sage-dk)" strokeWidth="1.6" strokeLinecap="round" />
-              <line x1="130" y1="52" x2="130" y2="56" stroke="var(--sage-dk)" strokeWidth="1.6" strokeLinecap="round" />
-            </g>
-            <circle cx="46" cy="45.7" r="28" fill="var(--cream)" stroke="var(--sage)" strokeWidth="1.5" />
-            {GLYPH(cause.a.role, 46, 45.7, 1.05)}
-            <circle cx="214" cy="45.7" r="28" fill="var(--cream)" stroke="var(--sage)" strokeWidth="1.5" />
-            {GLYPH(cause.b.role, 214, 45.7, 1.05)}
-            <text className="rlabel" x="46" y="92" textAnchor="middle" style={{ fontSize: 11 }}>{cause.a.name}</text>
-            <text className="rlabel" x="214" y="92" textAnchor="middle" style={{ fontSize: 11 }}>{cause.b.name}</text>
-          </svg>
-        </div>
+        {panelOpen && (
+          <div className="explore-panel">
+            {roleNodes.map(({ key, node }) => {
+              const isOpen = expandedRole === key;
+              const seams = window.getSteamsForRole ? window.getSteamsForRole(node.role) : [];
+              return (
+                <div key={key} className={`ep-row${isOpen ? " ep-row--open" : ""}`}>
+                  <div className="ep-row-head" onClick={() => toggleRow(key)}>
+                    <span className="xrow-ic"><Icon name={node.role} size={20} /></span>
+                    <span className="ep-row-main">
+                      <span className="ep-row-name">{node.name}</span>
+                      <span className="ep-row-scope">{ROLE_SCOPE[node.role]}</span>
+                    </span>
+                    <span className="chev" style={{ color: "var(--ink-35)", flex: "none", transition: "transform .25s", transform: isOpen ? "rotate(90deg)" : "none" }}>
+                      <Icon name="chev" size={17} />
+                    </span>
+                  </div>
+                  {isOpen && (
+                    <div className="ep-row-body">
+                      <p className="ep-quote">{ROLE_IN_SEAM[symptom][node.role]}</p>
+                      {seams.length > 1 && (
+                        <button className="ep-rabbit" onClick={() => { setPanelOpen(false); onRole(node.role); }}>
+                          See {node.name}&rsquo;s other seams <Icon name="chevsm" size={13} sw={2} />
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
 
-        <div className="explore-head"><span className="eyebrow">Explore the connection</span></div>
-
-        <div className="xrows">
-          {[cause.a, cause.b].map((n) => (
-            <div className="xrow-item" key={n.role} onClick={() => onRole(n.role)}>
-              <span className="xrow-ic"><Icon name={n.role} size={20} /></span>
-              <span className="xrow-main"><span className="xr-name">{n.name}</span><span className="xr-sub">{ROLE_SCOPE[n.role]}</span></span>
-              <span className="chev"><Icon name="chev" size={17} /></span>
+            <div className="ep-related" onClick={() => onSymptom(cause.related)}>
+              <span className="xrow-ic warn"><Icon name="warn" size={20} /></span>
+              <span className="ep-row-main">
+                <span className="ep-row-name serif">&ldquo;{SYM[cause.related]}&rdquo;</span>
+                <span className="ep-row-scope">Related symptom &mdash; same seam</span>
+              </span>
+              <span className="chev" style={{ color: "var(--ink-35)", flex: "none" }}><Icon name="chev" size={17} /></span>
             </div>
-          ))}
-          <div className="xrow-item" onClick={() => onSymptom(cause.related)}>
-            <span className="xrow-ic warn"><Icon name="warn" size={20} /></span>
-            <span className="xrow-main"><span className="xr-name serif">&ldquo;{SYM[cause.related]}&rdquo;</span><span className="xr-sub">Related symptom &mdash; same seam</span></span>
-            <span className="chev"><Icon name="chev" size={17} /></span>
-          </div>
-        </div>
 
-        <div style={{ marginTop: "auto", padding: "22px 0 26px" }}>
-          <button className="btn btn--sage" onClick={onClose}>This seam is one of many <span className="arrow"><Icon name="arrow" size={18} sw={1.8} /></span></button>
-        </div>
+            <div className="ep-cta">
+              <button className="btn btn--sage" onClick={onClose}>
+                This seam is one of many <span className="arrow"><Icon name="arrow" size={18} sw={1.8} /></span>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -304,17 +283,13 @@ function TeamResultScreen({ selected, onSeam, onAbsenceRole, onBack, onClose }) 
   const seenPairs = new Set();
   const connectionGaps = [];
   for (const sym of Object.keys(REVEALS)) {
-    const data = REVEALS[sym];
-    for (let i = 0; i < data.causes.length; i++) {
-      const c = data.causes[i];
-      const pairKey = [c.a.role, c.b.role].sort().join("|");
-      if (selected.has(c.a.role) && selected.has(c.b.role) && !seenPairs.has(pairKey)) {
-        seenPairs.add(pairKey);
-        connectionGaps.push({ symptom: sym, causeIdx: i, cause: c });
-        if (connectionGaps.length === 3) break;
-      }
+    const s = REVEALS[sym];
+    const pairKey = [s.a.role, s.b.role].sort().join("|");
+    if (selected.has(s.a.role) && selected.has(s.b.role) && !seenPairs.has(pairKey)) {
+      seenPairs.add(pairKey);
+      connectionGaps.push({ symptom: sym, cause: s });
+      if (connectionGaps.length === 3) break;
     }
-    if (connectionGaps.length === 3) break;
   }
 
   // Absence gaps: headline roles NOT in selected, priority order, capped at 3
@@ -334,8 +309,8 @@ function TeamResultScreen({ selected, onSeam, onAbsenceRole, onBack, onClose }) 
             <p className="tr-section-sub">Seams between the roles you have</p>
             <div className="xrows" style={{ marginTop: 14 }}>
               {connectionGaps.map((g) => (
-                <div key={`${g.symptom}-${g.causeIdx}`} className="xrow-item"
-                  onClick={() => onSeam(g.symptom, g.causeIdx)}>
+                <div key={g.symptom} className="xrow-item"
+                  onClick={() => onSeam(g.symptom)}>
                   <span className="xrow-ic"><Icon name={g.cause.a.role} size={20} /></span>
                   <span className="xrow-main">
                     <span className="xr-name">{g.cause.kick}</span>
@@ -440,4 +415,4 @@ function ClosingScreen({ onBack }) {
   );
 }
 
-Object.assign(window, { Landing, SymptomScreen, RevealScreen, CrossLink, TeamScreen, TeamResultScreen, ClosingScreen });
+Object.assign(window, { Landing, SymptomScreen, RevealScreen, TeamScreen, TeamResultScreen, ClosingScreen });

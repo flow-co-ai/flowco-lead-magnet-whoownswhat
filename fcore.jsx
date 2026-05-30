@@ -53,24 +53,29 @@ const SYMPTOMS = [
 const SYM = Object.fromEntries(SYMPTOMS.map((s) => [s.id, s.text]));
 
 const REVEALS = {
-  ring: { causes: [
-    { kick: "Attribution Break", a: { role: "paid", name: "Paid Media" }, b: { role: "tracking", name: "Tracking" },
-      sentence: "The phone rings, but nothing ties the call back to the click that caused it.", related: "prove" },
-  ]},
-  book: { causes: [
-    { kick: "Attribution Break", a: { role: "paid", name: "Paid Media" }, b: { role: "tracking", name: "Tracking" },
-      sentence: "Clicks are coming in, but the handoff into measurable conversion tracking is incomplete.", related: "prove" },
-    { kick: "Form-to-CRM Break", a: { role: "web", name: "Web" }, b: { role: "crm", name: "CRM" },
-      sentence: "The form submits, but no record is created and no follow-up ever fires.", related: "site" },
-  ]},
-  prove: { causes: [
-    { kick: "Closed-Loop Break", a: { role: "tracking", name: "Tracking" }, b: { role: "crm", name: "CRM" },
-      sentence: "Spend goes out and leads come in, but the two never reconcile. ROAS stays a guess.", related: "book" },
-  ]},
-  site: { causes: [
-    { kick: "Conversion Break", a: { role: "web", name: "Web" }, b: { role: "content", name: "Content" },
-      sentence: "Traffic lands on a page built to inform, not convert. The path to contact is missing.", related: "book" },
-  ]},
+  ring:  { kick: "Attribution Break",    a: { role: "paid",     name: "Paid Media" }, b: { role: "tracking", name: "Tracking" }, sentence: "Calls come in, but nothing connects them back to where they came from. So you can’t tell which marketing is working — you just keep paying for all of it.", related: "prove" },
+  book:  { kick: "Follow-Up Break",      a: { role: "crm",      name: "CRM" },        b: { role: "content",  name: "Content"  }, sentence: "The lead is captured, then nothing happens. No fast follow-up, no sequence, no calls or messages that move them from curious to booked. They go cold, then book whoever answered.", related: "site" },
+  prove: { kick: "Closed-Loop Break",    a: { role: "tracking", name: "Tracking" },   b: { role: "crm",      name: "CRM"      }, sentence: "Spend goes out one door, leads come in another, and the two never meet. Without the loop closed, every report is a guess dressed up as data.", related: "ring" },
+  site:  { kick: "Path-to-Action Break", a: { role: "web",      name: "Web" },        b: { role: "crm",      name: "CRM"      }, sentence: "People land, look, and leave. There’s no clear next step, no form that goes anywhere, no booking path. The site describes the business instead of capturing the lead.", related: "book" },
+};
+
+const ROLE_IN_SEAM = {
+  ring:  {
+    paid:     "Runs the spend that makes the phone ring. But if it fires without tracking wired in, it’s buying calls it can’t see — optimizing toward whatever’s loudest, not what’s actually booking.",
+    tracking: "Owns the thread that ties a call back to the click that caused it. Without it, every dollar Paid spends lands in a black box. The phone rings; nobody knows why.",
+  },
+  book:  {
+    crm:     "Owns what happens the second a lead comes in: the routing, the speed, the follow-up sequence. Without it, the lead sits in an inbox until it’s cold.",
+    content: "Owns the words that do the following-up: the texts, the emails, the call scripts that move someone from curious to booked. Without it, the CRM fires empty — a reminder to follow up, with nothing to actually say.",
+  },
+  prove: {
+    tracking: "Knows what was spent and where every lead came from. But it stops at the lead. It can’t see which ones turned into money.",
+    crm:      "Knows which leads booked and paid. But it doesn’t know what they cost to acquire. Until these two talk, you can see spend or revenue — never both against each other. So ROAS stays a story you tell, not a number you trust.",
+  },
+  site:  {
+    web: "Owns the page people land on and the form they’re supposed to fill. If the form is missing, buried, or broken, the visit ends in a back-button.",
+    crm: "Owns where that form is supposed to go: the record, the alert, the follow-up. Without it wired to the site, even a submitted form vanishes — the lead acted, and nothing caught them.",
+  },
 };
 
 const TEAM = [
@@ -114,6 +119,6 @@ function useRevealSequence(deps) {
 }
 
 Object.assign(window, {
-  Icon, LogoMark, ICON_PATHS, SYMPTOMS, SYM, REVEALS, TEAM, ROLE_SCOPE,
+  Icon, LogoMark, ICON_PATHS, SYMPTOMS, SYM, REVEALS, ROLE_IN_SEAM, TEAM, ROLE_SCOPE,
   Seg, useRevealSequence,
 });
