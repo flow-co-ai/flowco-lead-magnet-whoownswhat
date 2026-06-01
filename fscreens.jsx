@@ -358,19 +358,24 @@ function TeamResultScreen({ selected, onSeam, onAbsenceRole, onBack, onClose }) 
 }
 
 /* ============================================================
-   SCREEN 7 — Closing + calendar sheet
+   SCREEN 7 — Closing + Calendly booking sheet
    ============================================================ */
-const DOW = ["SU", "MO", "TU", "WE", "TH", "FR", "SA"];
-const TIMES = ["9:00 AM", "10:30 AM", "1:00 PM", "2:30 PM", "4:00 PM"];
+const CALENDLY_SRC = "https://assets.calendly.com/assets/external/widget.js";
+
 function ClosingScreen({ onBack }) {
   const [open, setOpen] = uS(false);
-  const [day, setDay] = uS(20);
-  const [time, setTime] = uS("10:30 AM");
-  // simple month grid: June 2026, starts Monday(1)
-  const start = 1; const dim = 30;
-  const cells = [];
-  for (let i = 0; i < start; i++) cells.push(null);
-  for (let d = 1; d <= dim; d++) cells.push(d);
+
+  uE(() => {
+    if (!open) return;
+    if (!document.querySelector(`script[src="${CALENDLY_SRC}"]`)) {
+      const s = document.createElement("script");
+      s.src = CALENDLY_SRC; s.async = true;
+      document.head.appendChild(s);
+    } else if (window.Calendly) {
+      window.Calendly.initInlineWidgets();
+    }
+  }, [open]);
+
   return (
     <div className="screen s-close">
       <div className="topbar">
@@ -390,25 +395,11 @@ function ClosingScreen({ onBack }) {
           <h3>Book a call</h3>
           <button className="iconbtn" onClick={() => setOpen(false)}><Icon name="x" size={20} /></button>
         </div>
-        <div className="cal-top">
-          <span className="mo">June 2026</span>
-          <span className="day">{DOW[(day) % 7]} Jun {day}</span>
-          <span className="nav">
-            <button className="iconbtn" style={{ width: 28, height: 28 }}><Icon name="back" size={16} /></button>
-            <button className="iconbtn" style={{ width: 28, height: 28 }}><Icon name="chevsm" size={16} /></button>
-          </span>
-        </div>
-        <div className="calgrid">
-          {DOW.map((d) => <span key={d} className="dow">{d}</span>)}
-          {cells.map((d, i) => d == null
-            ? <span key={"e" + i} className="d"></span>
-            : <span key={d} className={`d ${d === day ? "on" : ""}`} onClick={() => setDay(d)}>{d}</span>)}
-        </div>
-        <div className="times">
-          {TIMES.map((t) => <button key={t} className={`timechip ${t === time ? "on" : ""}`} onClick={() => setTime(t)}>{t}</button>)}
-        </div>
-        <div className="tz">All times CDT</div>
-        <button className="btn btn--sage" style={{ marginTop: 18 }} onClick={() => setOpen(false)}>Confirm {DOW[day % 7]} Jun {day}, {time}</button>
+        <div
+          className="calendly-inline-widget"
+          data-url="https://calendly.com/flowcompany/growth-map"
+          style={{ flex: 1, minHeight: 0, minWidth: "320px", margin: "8px -24px -30px" }}
+        />
       </div>
     </div>
   );
