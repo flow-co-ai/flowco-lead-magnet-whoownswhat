@@ -51,12 +51,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .viewport { position: absolute; inset: 0; display: flex; flex-direction: column; }
 .screen {
   position: absolute; inset: 0; display: flex; flex-direction: column;
+  overflow: hidden;
   animation: screenIn .55s var(--ease) both;
 }
 @keyframes screenIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 .body { flex: 1; min-height: 0; display: flex; flex-direction: column; padding: 0 30px; }
-.body.scroll { overflow-y: auto; }
+.body.scroll { overflow-y: auto; scrollbar-width: none; }
+.body.scroll::-webkit-scrollbar { display: none; }
 
 /* topbar (back / dots) */
 .topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 30px 0; padding-top: max(14px, env(safe-area-inset-top)); flex: none; color: var(--black); }
@@ -203,7 +205,8 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ============================================================
    SCREEN 4 — The reveal  (centerpiece)
    ============================================================ */
-.s-reveal .body { align-items: center; justify-content: flex-start; padding-top: max(24px, 8vh); overflow-y: auto; text-align: center; padding-bottom: 40px; }
+.s-reveal .body { align-items: center; justify-content: flex-start; padding-top: max(24px, 8vh); overflow-y: auto; scrollbar-width: none; text-align: center; padding-bottom: 40px; }
+.s-reveal .body::-webkit-scrollbar { display: none; }
 .reveal-kick { position: relative; display: inline-block; padding: 2px 8px; }
 .reveal-kick span { position: relative; z-index: 1; font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; font-weight: 600; color: var(--ink-70); }
 .reveal-kick::before {
