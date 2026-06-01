@@ -206,7 +206,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 /* ============================================================
    SCREEN 4 — The reveal  (centerpiece)
    ============================================================ */
-.s-reveal .body { align-items: center; justify-content: center; text-align: center; padding-bottom: 40px; }
+.s-reveal .body { align-items: center; justify-content: flex-start; padding-top: max(24px, 8vh); overflow-y: auto; text-align: center; padding-bottom: 40px; }
 .reveal-kick { position: relative; display: inline-block; padding: 2px 8px; }
 .reveal-kick span { position: relative; z-index: 1; font-size: 11px; letter-spacing: 0.26em; text-transform: uppercase; font-weight: 600; color: var(--ink-70); }
 .reveal-kick::before {
@@ -216,7 +216,7 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 }
 .r-named .reveal-kick::before { transform: scaleX(1); }
 
-.diagram { width: 300px; height: 150px; position: relative; margin: 30px 0 4px; }
+.diagram { width: 300px; height: 150px; position: relative; margin: 30px 0 4px; flex: none; }
 .diagram svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
 
 .rnode { opacity: 0; transform: scale(.3); transform-box: fill-box; transform-origin: center;
@@ -373,12 +373,27 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
 .ab-body { margin-top: 12px; font-size: 13px; color: var(--ink-50); line-height: 1.65; }
 
 /* ============================================================
-   DESKTOP — centered panel
+   DESKTOP — centered card
    ============================================================ */
 @media (min-width: 768px) {
-  body { background: var(--cream-2); }
+  html { height: 100%; }
+  body {
+    background: var(--cream-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
   .app-shell {
-    max-width: 520px;
-    box-shadow: 0 0 0 1px var(--line), 0 8px 40px -8px rgba(26,26,23,.18);
+    position: relative;
+    top: auto; bottom: auto; left: auto;
+    transform: none;
+    width: min(480px, calc(100% - 48px));
+    max-width: 480px;
+    height: min(90vh, 860px);
+    background: var(--paper);
+    border-radius: 24px;
+    box-shadow: 0 0 0 1px rgba(26,26,23,.07), 0 12px 56px -12px rgba(26,26,23,.22);
+    overflow: hidden;
   }
 }

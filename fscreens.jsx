@@ -139,8 +139,7 @@ function RevealScreen({ symptom, onBack, onRole, onSymptom, onClose }) {
         <button className="iconbtn" onClick={onBack}><Icon name="back" size={22} /></button>
         <button className="iconbtn"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></button>
       </div>
-      <div className={`body${panelOpen ? " scroll" : ""}`}
-        style={{ justifyContent: panelOpen ? "flex-start" : "center" }}>
+      <div className="body">
         <div className="reveal-kick"><span>{cause.kick}</span></div>
         <div className="diagram"><BreakDiagram cause={cause} /></div>
         <p className="reveal-sentence">{cause.sentence}</p>

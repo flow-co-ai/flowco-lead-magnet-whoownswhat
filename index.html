@@ -111,7 +111,7 @@ function App() {
   const render = () => {
     switch (screen) {
       case "landing":
-        return <Landing key="landing" onContinue={() => go("symptom")} />;
+        return <Landing key="landing" onContinue={() => go("team")} />;
 
       case "symptom":
         return <SymptomScreen key="symptom"
