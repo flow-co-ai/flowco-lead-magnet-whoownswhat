@@ -376,24 +376,14 @@ button { font-family: inherit; cursor: pointer; border: none; background: none; 
    DESKTOP — centered card
    ============================================================ */
 @media (min-width: 768px) {
-  html { height: 100%; }
-  body {
-    background: var(--cream-2);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    overflow: hidden;
-  }
+  body { background: var(--cream-2); }
   .app-shell {
-    position: relative;
-    top: auto; bottom: auto; left: auto;
-    transform: none;
-    width: min(480px, calc(100% - 48px));
-    max-width: 480px;
-    height: min(90vh, 860px);
+    /* keep position: fixed so inner absolute children size correctly */
+    width: 480px;
+    top: max(24px, 5vh);
+    bottom: max(24px, 5vh);
     background: var(--paper);
     border-radius: 24px;
     box-shadow: 0 0 0 1px rgba(26,26,23,.07), 0 12px 56px -12px rgba(26,26,23,.22);
-    overflow: hidden;
   }
 }
