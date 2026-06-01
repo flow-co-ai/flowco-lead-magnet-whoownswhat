@@ -395,11 +395,13 @@ function ClosingScreen({ onBack }) {
           <h3>Book a call</h3>
           <button className="iconbtn" onClick={() => setOpen(false)}><Icon name="x" size={20} /></button>
         </div>
-        <div
-          className="calendly-inline-widget"
-          data-url="https://calendly.com/flowcompany/growth-map"
-          style={{ flex: 1, minHeight: 0, minWidth: "320px", margin: "8px -24px -30px" }}
-        />
+        <div className="sheet-scroll">
+          <div
+            className="calendly-inline-widget"
+            data-url="https://calendly.com/flowcompany/growth-map"
+            style={{ minWidth: "320px", height: "700px" }}
+          />
+        </div>
       </div>
     </div>
   );
