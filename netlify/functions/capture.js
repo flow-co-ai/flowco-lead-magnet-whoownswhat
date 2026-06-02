@@ -1,28 +1,22 @@
 /* ============================================================
    Netlify Function — capture.js
-   POSTs lead data to Monday.com board 18405754310,
-   group group_mkwjedjg (Flow Company).
-   Env var required: MONDAY_API_TOKEN
+   Receives lead data from the gate form, finds the right
+   Monday.com board/group, and creates an item.
+   Token lives in Netlify env var: MONDAY_API_TOKEN
    ============================================================ */
 
-const MONDAY_API  = "https://api.monday.com/v2";
-const BOARD_ID    = "18405754310";
-const GROUP_ID    = "group_mkwjedjg";
-const SOURCE      = "Lead Magnet - Who Owns What";
+const MONDAY_API = "https://api.monday.com/v2";
+const WORKSPACE_NAME = "FlowCo Sales";
+const GROUP_NAME     = "Hot Leads";
+const SOURCE         = "Lead Magnet - Who Owns What";
 
-const CORS_HEADERS = {
-  "Access-Control-Allow-Origin":  "*",
-  "Access-Control-Allow-Headers": "Content-Type",
-  "Access-Control-Allow-Methods": "POST, OPTIONS",
-};
-
-async function mondayMutation(token, query) {
+async function mondayQuery(token, query) {
   const res = await fetch(MONDAY_API, {
-    method:  "POST",
+    method: "POST",
     headers: {
-      "Content-Type":  "application/json",
+      "Content-Type": "application/json",
       "Authorization": token,
-      "API-Version":   "2024-01",
+      "API-Version": "2024-01",
     },
     body: JSON.stringify({ query }),
   });
@@ -32,7 +26,15 @@ async function mondayMutation(token, query) {
 exports.handler = async (event) => {
   // CORS preflight
   if (event.httpMethod === "OPTIONS") {
-    return { statusCode: 200, headers: CORS_HEADERS, body: "" };
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
+      },
+      body: "",
+    };
   }
 
   if (event.httpMethod !== "POST") {
@@ -57,62 +59,90 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
-  // Sanitise strings for GraphQL
-  const safe = (s) => String(s).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
-
-  const itemName = `${safe(name)} — ${safe(company)}`;
-
-  // Column values — adjust IDs if your board uses different names.
-  // To find column IDs: Monday board → any column → "..." menu → "Copy column ID"
-  // Common defaults for a CRM/leads board:
-  //   email        → Email column
-  //   text         → Text column (Company)
-  //   status       → Status column (Source)
-  //   status_1     → Status column (Medium) — rename if needed
-  const columnValues = JSON.stringify(
-    JSON.stringify({
-      email:    { email: email, text: email },
-      text:     safe(company),
-      status:   { label: SOURCE },
-      status_1: { label: medium || "Direct" },
-    })
-  );
-
-  const mutation = `
-    mutation {
-      create_item(
-        board_id: ${BOARD_ID},
-        group_id: "${GROUP_ID}",
-        item_name: "${itemName}",
-        column_values: ${columnValues}
-      ) { id }
-    }
-  `;
-
   try {
-    const result = await mondayMutation(token, mutation);
+    // 1. Find the board in FlowCo Sales workspace
+    const boardsData = await mondayQuery(token, `{
+      boards(limit: 100, workspace_ids: []) {
+        id name
+        workspace { name }
+        groups { id title }
+      }
+    }`);
+
+    const allBoards = boardsData?.data?.boards || [];
+    const board = allBoards.find(
+      (b) =>
+        b.workspace?.name?.toLowerCase() === WORKSPACE_NAME.toLowerCase()
+    );
+
+    if (!board) {
+      console.error("Board not found. Available workspaces:", allBoards.map(b => b.workspace?.name));
+      return { statusCode: 500, body: JSON.stringify({ error: "Board not found in workspace: " + WORKSPACE_NAME }) };
+    }
+
+    // 2. Find the Hot Leads group
+    const group = board.groups?.find(
+      (g) => g.title?.toLowerCase() === GROUP_NAME.toLowerCase()
+    );
+
+    if (!group) {
+      console.error("Group not found. Available groups:", board.groups?.map(g => g.title));
+      return { statusCode: 500, body: JSON.stringify({ error: "Group not found: " + GROUP_NAME }) };
+    }
+
+    const boardId = board.id;
+    const groupId = group.id;
+
+    // 3. Build column values — adjust column IDs to match your board
+    // These are the most common default column IDs in Monday CRM boards.
+    // If items land without some fields, check your board's column IDs
+    // at: monday.com → board → column settings → copy column ID.
+    const columnValues = JSON.stringify({
+      email:       { email: email, text: email },
+      text:        company,                          // "Company" text column
+      lead_source: { label: SOURCE },                // Status/dropdown column
+      medium__1:   { label: medium || "Organic" },   // Medium status column
+    });
+
+    const itemName = `${name} — ${company}`;
+
+    const mutation = `
+      mutation {
+        create_item(
+          board_id: ${boardId},
+          group_id: "${groupId}",
+          item_name: "${itemName.replace(/"/g, '\\"')}",
+          column_values: ${JSON.stringify(columnValues)}
+        ) {
+          id
+        }
+      }
+    `;
+
+    const result = await mondayQuery(token, mutation);
 
     if (result.errors) {
-      console.error("Monday errors:", JSON.stringify(result.errors));
-      // Still return 200 — lead is captured, column mapping may just need tweaking
+      console.error("Monday mutation errors:", result.errors);
       return {
-        statusCode: 200,
-        headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
-        body: JSON.stringify({ success: true, warning: "Item created but column mapping may need adjustment", errors: result.errors }),
+        statusCode: 500,
+        body: JSON.stringify({ error: "Monday API error", details: result.errors }),
       };
     }
 
     const itemId = result?.data?.create_item?.id;
-    console.log(`Monday item created: ${itemId} | ${name} | ${email} | ${company} | ${medium}`);
+    console.log("Created Monday item:", itemId, "| Lead:", email);
 
     return {
       statusCode: 200,
-      headers: { ...CORS_HEADERS, "Content-Type": "application/json" },
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({ success: true, itemId }),
     };
 
   } catch (err) {
-    console.error("capture.js error:", err.message);
+    console.error("capture.js error:", err);
     return {
       statusCode: 500,
       body: JSON.stringify({ error: "Internal error", message: err.message }),
