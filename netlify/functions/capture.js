@@ -6,9 +6,9 @@
    ============================================================ */
 
 const MONDAY_API = "https://api.monday.com/v2";
-const WORKSPACE_NAME = "FlowCo Sales";
-const GROUP_NAME     = "Hot Leads";
-const SOURCE         = "Lead Magnet - Who Owns What";
+const BOARD_ID   = "8122098964";
+const GROUP_ID   = "warm_leads";
+const SOURCE     = "Lead Magnet - Who Owns What";
 
 async function mondayQuery(token, query) {
   const res = await fetch(MONDAY_API, {
@@ -60,40 +60,7 @@ exports.handler = async (event) => {
   }
 
   try {
-    // 1. Find the board in FlowCo Sales workspace
-    const boardsData = await mondayQuery(token, `{
-      boards(limit: 100, workspace_ids: []) {
-        id name
-        workspace { name }
-        groups { id title }
-      }
-    }`);
-
-    const allBoards = boardsData?.data?.boards || [];
-    const board = allBoards.find(
-      (b) =>
-        b.workspace?.name?.toLowerCase() === WORKSPACE_NAME.toLowerCase()
-    );
-
-    if (!board) {
-      console.error("Board not found. Available workspaces:", allBoards.map(b => b.workspace?.name));
-      return { statusCode: 500, body: JSON.stringify({ error: "Board not found in workspace: " + WORKSPACE_NAME }) };
-    }
-
-    // 2. Find the Hot Leads group
-    const group = board.groups?.find(
-      (g) => g.title?.toLowerCase() === GROUP_NAME.toLowerCase()
-    );
-
-    if (!group) {
-      console.error("Group not found. Available groups:", board.groups?.map(g => g.title));
-      return { statusCode: 500, body: JSON.stringify({ error: "Group not found: " + GROUP_NAME }) };
-    }
-
-    const boardId = board.id;
-    const groupId = group.id;
-
-    // 3. Build column values — adjust column IDs to match your board
+    // Build column values — adjust column IDs to match your board
     // These are the most common default column IDs in Monday CRM boards.
     // If items land without some fields, check your board's column IDs
     // at: monday.com → board → column settings → copy column ID.
@@ -109,8 +76,8 @@ exports.handler = async (event) => {
     const mutation = `
       mutation {
         create_item(
-          board_id: ${boardId},
-          group_id: "${groupId}",
+          board_id: ${BOARD_ID},
+          group_id: "${GROUP_ID}",
           item_name: "${itemName.replace(/"/g, '\\"')}",
           column_values: ${JSON.stringify(columnValues)}
         ) {
