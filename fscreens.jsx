@@ -57,7 +57,7 @@ function Landing({ onContinue }) {
   const [logoErr, setLogoErr] = uS(false);
   const [name, setName] = uS("");
   const [email, setEmail] = uS("");
-  const [medium, setMedium] = uS("");
+  const [company, setCompany] = uS("");
   const [err, setErr] = uS("");
 
   const handleSubmit = () => {
@@ -75,8 +75,8 @@ function Landing({ onContinue }) {
       body: JSON.stringify({
         name:    name.trim(),
         email:   email.trim(),
-        company: "",
-        medium:  medium || "Organic",
+        company: company.trim(),
+        medium:  "organic",
         source,
       }),
     }).catch(() => {});
@@ -119,19 +119,11 @@ function Landing({ onContinue }) {
             </label>
             <label className="field">
               <Icon name="company" size={18} />
-              <select
-                className={medium ? "" : "empty"}
-                value={medium}
-                onChange={e => setMedium(e.target.value)}
-              >
-                <option value="" disabled>How did you hear about us?</option>
-                <option value="Google Search">Google Search</option>
-                <option value="Instagram">Instagram</option>
-                <option value="Facebook">Facebook</option>
-                <option value="LinkedIn">LinkedIn</option>
-                <option value="Referral">Referral</option>
-                <option value="Other">Other</option>
-              </select>
+              <input
+                placeholder="Company name"
+                value={company}
+                onChange={e => setCompany(e.target.value)}
+              />
             </label>
             {err && <p className="gate-err">{err}</p>}
             <button
