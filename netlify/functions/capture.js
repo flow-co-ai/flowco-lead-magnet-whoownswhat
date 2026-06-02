@@ -7,6 +7,24 @@ const MONDAY_API = "https://api.monday.com/v2";
 const BOARD_ID   = "8122098964";
 const GROUP_ID   = "new_group_mkm87t4c";
 
+// Maps incoming source values → valid Monday Source labels
+const SOURCE_MAP = {
+  instagram: "ig", ig: "ig",
+  facebook: "fb", fb: "fb", facebook_mobile_feed: "Facebook_Mobile_Feed",
+  meta: "meta",
+  google: "google",
+  youtube: "youtube",
+  tiktok: "tiktok",
+  referral: "referral",
+  personal: "personal",
+  apollo: "apollo",
+  website: "website",
+  guidebook: "Guidebook",
+  cold_email: "cold_email",
+  cold_call: "Cold Call",
+  unknown: "unknown",
+};
+
 async function mondayQuery(token, query) {
   const res = await fetch(MONDAY_API, {
     method: "POST",
@@ -56,8 +74,9 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
-  // Source: payload.source → payload.utm_source → "unknown"
-  const source = srcField || utm_source || "unknown";
+  // Source: normalize to a valid Monday label, fallback to "unknown"
+  const rawSource = (srcField || utm_source || "").toLowerCase().replace(/\s+/g, "_");
+  const source = SOURCE_MAP[rawSource] || "unknown";
 
   try {
     const columnValues = JSON.stringify({
