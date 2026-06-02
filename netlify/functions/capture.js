@@ -7,7 +7,7 @@
 
 const MONDAY_API = "https://api.monday.com/v2";
 const BOARD_ID   = "8122098964";
-const GROUP_ID   = "warm_leads";
+const GROUP_ID   = "new_group_mkm87t4c";
 const SOURCE     = "Lead Magnet - Who Owns What";
 
 async function mondayQuery(token, query) {
