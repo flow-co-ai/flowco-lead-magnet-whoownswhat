@@ -21,17 +21,6 @@ async function mondayQuery(token, query) {
 }
 
 exports.handler = async (event) => {
-  // Temporary debug: GET returns real column IDs — remove after use
-  if (event.httpMethod === "GET") {
-    const token = process.env.MONDAY_API_TOKEN;
-    const colData = await mondayQuery(token, `{ boards(ids: [${BOARD_ID}]) { columns { id title type } } }`);
-    return {
-      statusCode: 200,
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(colData?.data?.boards?.[0]?.columns, null, 2),
-    };
-  }
-
   // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return {
@@ -67,33 +56,29 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
-  // Source: UTM param from payload → Referer header → "Direct"
+  // Source: UTM param from payload → Referer hostname → "Direct"
   const referer = event.headers?.referer || event.headers?.Referer || "";
-  const source  = utm_source || (referer ? new URL(referer).hostname : "Direct");
+  let source = utm_source;
+  if (!source) {
+    try { source = new URL(referer).hostname; } catch { source = "Direct"; }
+  }
 
   try {
-    // DEBUG: log real column IDs — remove after confirming IDs
-    const colData = await mondayQuery(token, `{ boards(ids: [${BOARD_ID}]) { columns { id title type } } }`);
-    console.log("COLUMNS:", JSON.stringify(colData?.data?.boards?.[0]?.columns));
-
-    // Column IDs below — update after checking logs from the debug line above
     const columnValues = JSON.stringify({
-      email__1:    { email: email, text: email },   // Email column
-      text__1:     company,                          // Company column
-      status:      { label: "New" },                 // Status column
-      text0:       source,                           // Source column
-      text1:       "Lead Magnet",                    // Medium column
-      text2:       "Who Owns What",                  // Campaign column
+      lead_company:       company,
+      lead_email:         { email: email, text: email },
+      lead_status:        { label: "New" },
+      status_1_mkm8938t:  { label: source },
+      color_mksapa2t:     { label: "Lead Magnet" },
+      text_mksaxzyk:      "Who Owns What",
     });
-
-    const itemName = name;
 
     const mutation = `
       mutation {
         create_item(
           board_id: ${BOARD_ID},
           group_id: "${GROUP_ID}",
-          item_name: "${itemName.replace(/"/g, '\\"')}",
+          item_name: "${name.replace(/"/g, '\\"')}",
           column_values: ${JSON.stringify(columnValues)}
         ) {
           id
