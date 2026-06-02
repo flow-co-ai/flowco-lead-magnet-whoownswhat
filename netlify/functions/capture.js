@@ -1,14 +1,11 @@
 /* ============================================================
    Netlify Function — capture.js
-   Receives lead data from the gate form, finds the right
-   Monday.com board/group, and creates an item.
    Token lives in Netlify env var: MONDAY_API_TOKEN
    ============================================================ */
 
 const MONDAY_API = "https://api.monday.com/v2";
 const BOARD_ID   = "8122098964";
 const GROUP_ID   = "new_group_mkm87t4c";
-const SOURCE     = "Lead Magnet - Who Owns What";
 
 async function mondayQuery(token, query) {
   const res = await fetch(MONDAY_API, {
@@ -54,24 +51,31 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  const { name, email, company, medium } = payload;
+  const { name, email, company, utm_source } = payload;
   if (!name || !email || !company) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
+  // Source: UTM param from payload → Referer header → "Direct"
+  const referer = event.headers?.referer || event.headers?.Referer || "";
+  const source  = utm_source || (referer ? new URL(referer).hostname : "Direct");
+
   try {
-    // Build column values — adjust column IDs to match your board
-    // These are the most common default column IDs in Monday CRM boards.
-    // If items land without some fields, check your board's column IDs
-    // at: monday.com → board → column settings → copy column ID.
+    // DEBUG: log real column IDs — remove after confirming IDs
+    const colData = await mondayQuery(token, `{ boards(ids: [${BOARD_ID}]) { columns { id title type } } }`);
+    console.log("COLUMNS:", JSON.stringify(colData?.data?.boards?.[0]?.columns));
+
+    // Column IDs below — update after checking logs from the debug line above
     const columnValues = JSON.stringify({
-      email:       { email: email, text: email },
-      text:        company,                          // "Company" text column
-      lead_source: { label: SOURCE },                // Status/dropdown column
-      medium__1:   { label: medium || "Organic" },   // Medium status column
+      email__1:    { email: email, text: email },   // Email column
+      text__1:     company,                          // Company column
+      status:      { label: "New" },                 // Status column
+      text0:       source,                           // Source column
+      text1:       "Lead Magnet",                    // Medium column
+      text2:       "Who Owns What",                  // Campaign column
     });
 
-    const itemName = `${name} — ${company}`;
+    const itemName = name;
 
     const mutation = `
       mutation {
@@ -97,7 +101,7 @@ exports.handler = async (event) => {
     }
 
     const itemId = result?.data?.create_item?.id;
-    console.log("Created Monday item:", itemId, "| Lead:", email);
+    console.log("Created Monday item:", itemId, "| Lead:", email, "| Source:", source);
 
     return {
       statusCode: 200,
