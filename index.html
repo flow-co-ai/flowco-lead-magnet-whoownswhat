@@ -3,155 +3,217 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Who owns what. Where it breaks. — Diagnostic</title>
+<title>Who owns what. Where it breaks. — Flow Co.</title>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet" />
-<link rel="stylesheet" href="final.css" />
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Playfair+Display:ital,wght@0,500;0,700;0,800;1,800&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="styles.css" />
+<style>
+  /* ── 3-field gate ── */
+  .gate__form {
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    box-shadow: 0 24px 60px -30px rgba(26,26,23,0.4);
+  }
+  .gate__fields { display: flex; flex-direction: column; gap: 10px; }
+  .gate__input-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .gate__form input {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 2px;
+    outline: none;
+    background: var(--cream);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 300;
+    color: var(--black);
+    padding: 13px 16px;
+    transition: border-color .2s ease;
+  }
+  .gate__form input:focus { border-color: var(--sage); background: #fff; }
+  .gate__form input::placeholder { color: var(--ink-40); }
+  .gate__form .btn { width: 100%; padding: 16px; font-size: 15px; margin-top: 2px; border-radius: 2px; letter-spacing: 0.03em; }
+
+  /* ── Calendly section ── */
+  .calendly-section {
+    background: var(--cream);
+    padding-block: clamp(80px, 10vw, 140px);
+  }
+  .calendly-section .wrap { max-width: 900px; }
+  .calendly-head { text-align: center; margin-bottom: 52px; }
+  .calendly-head .eyebrow { display: block; margin-bottom: 18px; }
+  .calendly-head h2 {
+    font-family: var(--serif);
+    font-weight: 800;
+    font-size: clamp(34px, 4.8vw, 68px);
+    line-height: 1.0;
+    letter-spacing: -0.02em;
+  }
+  .calendly-head h2 em { color: var(--sage); font-style: italic; }
+  .calendly-head p {
+    margin-top: 20px;
+    font-size: clamp(16px, 1.4vw, 19px);
+    color: var(--ink-60);
+    max-width: 52ch;
+    margin-inline: auto;
+    line-height: 1.6;
+  }
+  .calendly-embed {
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 32px 80px -40px rgba(26,26,23,0.25);
+  }
+
+  @media (max-width: 620px) {
+    .gate__input-row { grid-template-columns: 1fr; }
+  }
+</style>
 </head>
 <body>
-<div id="root"></div>
 
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
-<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<div class="noise"></div>
+<div class="cursor-dot"></div>
+<div class="cursor-ring"></div>
 
-<style>
-/* inline explore panel */
-.explore-panel { width: 100%; margin-top: 24px; text-align: left; }
-.ep-row {
-  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
-  margin-bottom: 10px; overflow: hidden; transition: border-color .2s;
-}
-.ep-row--open { border-color: var(--sage); }
-.ep-row-head { display: flex; align-items: center; gap: 14px; padding: 16px 18px; cursor: pointer; }
-.ep-row-main { flex: 1; display: flex; flex-direction: column; gap: 3px; }
-.ep-row-name { font-size: 15px; font-weight: 500; letter-spacing: -0.01em; color: var(--black); }
-.ep-row-name.serif { font-family: var(--serif); font-style: italic; font-size: 15.5px; }
-.ep-row-scope { font-size: 11.5px; color: var(--ink-35); }
-.ep-row-body { padding: 0 18px 18px; }
-.ep-quote {
-  font-size: 13.5px; color: var(--ink-50); line-height: 1.6;
-  border-left: 2px solid var(--sage); padding-left: 14px; margin-bottom: 12px;
-}
-.ep-rabbit {
-  display: inline-flex; align-items: center; gap: 6px;
-  font-size: 12.5px; font-weight: 500; color: var(--sage-dk);
-}
-.ep-related {
-  display: flex; align-items: flex-start; gap: 14px;
-  background: var(--paper); border: 1px solid var(--line); border-radius: 14px;
-  padding: 16px 18px; cursor: pointer; margin-bottom: 10px;
-  transition: border-color .2s, transform .2s;
-}
-.ep-related:active { transform: scale(.99); border-color: var(--sage); }
-.ep-cta { padding: 14px 0 26px; }
-</style>
-<script type="text/babel" src="fcore.jsx"></script>
-<script type="text/babel" src="fscreens.jsx"></script>
-<script type="text/babel">
-const { useState, useEffect, useRef } = React;
+<!-- ============ NAV ============ -->
+<nav class="nav" id="nav">
+  <a href="https://flowco.ai" class="nav__brand">
+    <img class="nav__logo" src="https://flowco.ai/wp-content/uploads/2025/05/Flow-Co.-Logo-2.png" alt="Flow Co."
+         onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=&quot;nav__logo-text&quot;>Flow Co.</span>')" />
+  </a>
+  <span class="nav__tag">Free Resource</span>
+</nav>
 
-// Fallback seed for roles with no seam in REVEALS (seo, reputation)
-const ROLE_SEED = { paid: "ring", tracking: "ring", crm: "book", content: "book", web: "site", seo: "prove", reputation: "ring" };
+<!-- ============ HERO ============ -->
+<header class="hero">
+  <div class="wrap hero__grid">
+    <div class="hero__copy">
+      <div class="hero__eyebrow reveal">
+        <span class="rule"></span>
+        <span class="eyebrow">The Marketing Ownership Diagnostic</span>
+      </div>
+      <h1 class="reveal d1">Who owns what.<br /><span class="break">Where it breaks.</span></h1>
+      <p class="hero__sub reveal d2">Seven marketing roles. Ten places they're supposed to connect. Most agencies lose revenue in the gaps between them — and never see it on a report. Map yours below.</p>
 
-// Returns symptom keys for every seam that involves a given role.
-function getSteamsForRole(role) {
-  return Object.keys(REVEALS).filter(sym => {
-    const s = REVEALS[sym];
-    return s.a.role === role || s.b.role === role;
-  });
-}
-window.getSteamsForRole = getSteamsForRole;
-
-function App() {
-  const [screen, setScreen] = useState("landing");
-  const [symptom, setSymptom] = useState("book");
-  // Where reveal's back button navigates: "symptom" | "team" | "team-result"
-  const [revealBack, setRevealBack] = useState("symptom");
-  // Where closing's back button navigates: "reveal" | "team-result"
-  const [closingBack, setClosingBack] = useState("reveal");
-  // Selected roles from TeamScreen, carried into TeamResultScreen
-  const [selectedRoles, setSelectedRoles] = useState(new Set());
-
-  const go = (s) => setScreen(s);
-
-  // Cycles to the next seam for a role (called from inline panel).
-  // Does not change revealBack — preserves original entry point.
-  const handleRoleFromReveal = (role) => {
-    const seams = getSteamsForRole(role);
-    if (!seams.length) { setSymptom(ROLE_SEED[role]); go("reveal"); return; }
-    const cur = seams.indexOf(symptom);
-    const next = seams[(cur + 1) % seams.length];
-    setSymptom(next); go("reveal");
-  };
-
-  // Enters reveal from the team grid (first seam for the role).
-  const enterRoleFromTeam = (role) => {
-    const seams = getSteamsForRole(role);
-    const first = seams[0] || ROLE_SEED[role];
-    setSymptom(first);
-    setRevealBack("team"); go("reveal");
-  };
-
-  // Enters reveal from a team-result connection gap.
-  const enterSeamFromResult = (sym) => {
-    setSymptom(sym);
-    setRevealBack("team-result"); go("reveal");
-  };
-
-  // Enters reveal from a team-result absence role (first seam, or fallback).
-  const enterAbsenceRole = (role) => {
-    const seams = getSteamsForRole(role);
-    const first = seams[0] || ROLE_SEED[role];
-    setSymptom(first);
-    setRevealBack("team-result"); go("reveal");
-  };
-
-  const render = () => {
-    switch (screen) {
-      case "landing":
-        return <Landing key="landing" onContinue={() => go("team")} />;
-
-      case "symptom":
-        return <SymptomScreen key="symptom"
-          onReveal={(s) => { setSymptom(s); setRevealBack("symptom"); go("reveal"); }}
-          onTeam={() => go("team")} />;
-
-      case "reveal":
-        return <RevealScreen key={`reveal-${symptom}`} symptom={symptom}
-          onBack={() => go(revealBack)}
-          onRole={handleRoleFromReveal}
-          onSymptom={(s) => { setSymptom(s); go("reveal"); }}
-          onClose={() => { setClosingBack("reveal"); go("closing"); }} />;
-
-      case "team":
-        return <TeamScreen key="team"
-          onSymptomDoor={() => go("symptom")}
-          onProceed={(sel) => { setSelectedRoles(sel); go("team-result"); }} />;
-
-      case "team-result":
-        return <TeamResultScreen key="team-result" selected={selectedRoles}
-          onSeam={enterSeamFromResult}
-          onAbsenceRole={enterAbsenceRole}
-          onBack={() => go("team")}
-          onClose={() => { setClosingBack("team-result"); go("closing"); }} />;
-
-      case "closing":
-        return <ClosingScreen key="closing" onBack={() => go(closingBack)} />;
-
-      default: return null;
-    }
-  };
-
-  return (
-    <div className="app-shell">
-      <div className="viewport">{render()}</div>
+      <div class="gate reveal d3" id="gate">
+        <form class="gate__form" id="gateForm" novalidate>
+          <div class="gate__fields">
+            <div class="gate__input-row">
+              <input type="text" id="gateName" placeholder="Your name" aria-label="Your name" autocomplete="given-name" required />
+              <input type="text" id="gateCompany" placeholder="Company name" aria-label="Company name" autocomplete="organization" required />
+            </div>
+            <input type="email" id="gateInput" placeholder="Work email" aria-label="Work email" autocomplete="email" required />
+          </div>
+          <button type="submit" class="btn" id="gateSubmit">Unlock the tool</button>
+        </form>
+        <p class="gate__note" id="gateNote">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+          <span>Instant access. No spam — just the diagnostic.</span>
+        </p>
+        <div class="gate__success" id="gateSuccess">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"/></svg>
+          <span>Unlocked. Your map is below.</span>
+        </div>
+      </div>
     </div>
-  );
-}
 
-ReactDOM.createRoot(document.getElementById("root")).render(<App />);
-</script>
+    <div class="hero__viz reveal d2">
+      <svg id="heroViz" viewBox="0 0 480 480" aria-hidden="true"></svg>
+    </div>
+  </div>
+</header>
+
+<!-- ============ GATED CONTENT ============ -->
+<div class="gated" id="gated">
+
+  <!-- STATS -->
+  <section class="stats" id="stats">
+    <div class="wrap stats__grid">
+      <div class="stat reveal">
+        <div class="stat__num"><span data-count="7">0</span></div>
+        <div class="stat__label">roles mapped across the funnel</div>
+      </div>
+      <div class="stat reveal d1">
+        <div class="stat__num"><span data-count="10">0</span></div>
+        <div class="stat__label">critical overlap points between teams</div>
+      </div>
+      <div class="stat reveal d2">
+        <div class="stat__num">1</div>
+        <div class="stat__label">gap is all it takes to kill attribution</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERLAP MAP -->
+  <section class="map">
+    <div class="wrap">
+      <div class="map__head reveal">
+        <span class="eyebrow">The Overlap Map</span>
+        <h2>The work doesn't fail inside a role.<br />It fails in the <span class="hl">space between two</span>.</h2>
+        <p class="map__sub">Each role below owns its lane. But ten responsibilities live in the seams — shared ground that belongs to two teams at once. When nobody owns the seam, revenue leaks. Click a role to isolate every overlap that touches it.</p>
+      </div>
+
+      <div class="roles reveal d1" id="roles"></div>
+      <p class="roles__hint reveal d1">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m9 18 6-6-6-6"/></svg>
+        Tap any role to filter the map
+      </p>
+
+      <div class="filterbar reveal d2">
+        <span class="filter-tag" id="filterTag">
+          <span class="filter-tag__swatch"></span>
+          Filtering: <b class="filter-tag__name"></b>
+          <button class="filter-tag__clear" aria-label="Clear filter">&times;</button>
+        </span>
+        <span class="filter-count" id="filterCount" style="display:none"></span>
+      </div>
+
+      <div class="table reveal d2">
+        <div class="table__headrow">
+          <span>Roles</span>
+          <span>Must share ownership of</span>
+          <span>The gap when it's missing</span>
+        </div>
+        <div id="table"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALENDLY -->
+  <section class="calendly-section">
+    <div class="wrap">
+      <div class="calendly-head reveal">
+        <span class="eyebrow">Next step</span>
+        <h2>Your team has the roles.<br /><em>We close the gaps.</em></h2>
+        <p>The revenue isn't lost to missing talent — it's lost in the handoffs no one owns. Book a call and we'll walk through exactly where yours are leaking.</p>
+      </div>
+      <div class="calendly-embed reveal d1">
+        <div class="calendly-inline-widget" data-url="https://calendly.com/flowcompany/growth-map" style="min-width:320px;height:700px;"></div>
+        <script type="text/javascript" src="https://assets.calendly.com/assets/external/widget.js" async></script>
+      </div>
+    </div>
+  </section>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <img class="footer__logo" src="https://flowco.ai/wp-content/uploads/2025/05/Flow-Co.-Logo-2.png" alt="Flow Co."
+           onerror="this.style.display='none';this.insertAdjacentHTML('afterend','<span class=&quot;footer__logo-text&quot;>Flow Co.</span>')" />
+      <span class="footer__copy">&copy; 2026 Flow Co. — Marketing, integrated. All rights reserved.</span>
+    </div>
+  </footer>
+
+</div>
+
+<script src="script.js"></script>
 </body>
 </html>
