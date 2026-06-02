@@ -84,7 +84,7 @@ exports.handler = async (event) => {
       lead_email:         { email: email, text: email },
       lead_status:        { label: "New" },
       status_1_mkm8938t:  { label: source },
-      color_mksapa2t:     { label: "Lead Magnet" },
+      color_mksapa2t:     { label: "organic" },
       text_mksaxzyk:      "Who Owns What",
     });
 
