@@ -21,6 +21,17 @@ async function mondayQuery(token, query) {
 }
 
 exports.handler = async (event) => {
+  // Temporary debug: GET returns real column IDs — remove after use
+  if (event.httpMethod === "GET") {
+    const token = process.env.MONDAY_API_TOKEN;
+    const colData = await mondayQuery(token, `{ boards(ids: [${BOARD_ID}]) { columns { id title type } } }`);
+    return {
+      statusCode: 200,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(colData?.data?.boards?.[0]?.columns, null, 2),
+    };
+  }
+
   // CORS preflight
   if (event.httpMethod === "OPTIONS") {
     return {
