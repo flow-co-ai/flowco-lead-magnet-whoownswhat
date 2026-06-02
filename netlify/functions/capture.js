@@ -51,17 +51,13 @@ exports.handler = async (event) => {
     return { statusCode: 400, body: JSON.stringify({ error: "Invalid JSON" }) };
   }
 
-  const { name, email, company, utm_source } = payload;
+  const { name, email, company, source: srcField, utm_source } = payload;
   if (!name || !email || !company) {
     return { statusCode: 400, body: JSON.stringify({ error: "Missing required fields" }) };
   }
 
-  // Source: UTM param from payload → Referer hostname → "Direct"
-  const referer = event.headers?.referer || event.headers?.Referer || "";
-  let source = utm_source;
-  if (!source) {
-    try { source = new URL(referer).hostname; } catch { source = "Direct"; }
-  }
+  // Source: payload.source → payload.utm_source → "unknown"
+  const source = srcField || utm_source || "unknown";
 
   try {
     const columnValues = JSON.stringify({
